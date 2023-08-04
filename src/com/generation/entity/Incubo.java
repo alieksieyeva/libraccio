@@ -1,5 +1,5 @@
 package com.generation.entity;
-
+//vediamo se lo vedrete:)
 public class Incubo
 {
 	public String parola;
