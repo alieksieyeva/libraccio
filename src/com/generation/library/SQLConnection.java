@@ -1,9 +1,11 @@
 package com.generation.library;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,56 +70,40 @@ public class SQLConnection
 	 * password=vostraPassword				  <br/>
 	 * dbname=nomeDBinUso					  
 	 * @param configFileName
+	 * @throws FileNotFoundException 
 	 */
-	public SQLConnection(String configFileName)
+	public SQLConnection(String configFileName) throws SQLException, FileNotFoundException
 	{
 		this.filename = configFileName;
 		readConfig();
-		
-		try
-		{
-		  String url = "jdbc:mysql://localhost:3306/"+dbname;
-		  connection = DriverManager.getConnection(url, username, password);
-		}
-		catch(Exception e)
-		{
-			System.out.println("Problemi nella connessione al DB, termino");
-			e.printStackTrace();
-			System.exit(-1);
-		}
+	
+		String url = "jdbc:mysql://localhost:3306/"+dbname;
+		connection = DriverManager.getConnection(url, username, password);
 		
 	}
 	
-	private void readConfig()
+	private void readConfig() throws FileNotFoundException
 	{
-		try
+		
+		Scanner s = new Scanner(new File(filename));
+		Map<String,String> mapped = new HashMap<>();
+		
+		while(s.hasNextLine())
 		{
-			Scanner s = new Scanner(new File(filename));
-			Map<String,String> mapped = new HashMap<>();
-			
-			while(s.hasNextLine())
-			{
-				String[] parts = s.nextLine().split("=");
-				mapped.put(parts[0].trim(), parts[1].trim());
-			}
-			
-			username = mapped.get("username");
-			password = mapped.get("password");
-			dbname = mapped.get("dbname");
-			
-			if(username==null || password==null || dbname==null)
-			{
-				System.out.println("Mancano dati nel file di configurazione, controllalo");
-				System.exit(-1);
-			}
-			
+			String[] parts = s.nextLine().split("=");
+			mapped.put(parts[0].trim(), parts[1].trim());
 		}
-		catch(Exception e)
+		
+		username = mapped.get("username");
+		password = mapped.get("password");
+		dbname = mapped.get("dbname");
+		
+		if(username==null || password==null || dbname==null)
 		{
-			System.out.println("ERRORE-TERMINO");
-			e.printStackTrace();
+			System.out.println("Mancano dati nel file di configurazione, controllalo");
 			System.exit(-1);
 		}
+			
 	}
 	
 	/**
@@ -132,100 +118,78 @@ public class SQLConnection
 	 * 
 	 * @param query
 	 * @return
+	 * @throws SQLException 
 	 */
-	public List<Map<String,String>> executeQuery(String query)
+	public List<Map<String,String>> executeQuery(String query) throws SQLException
 	{
-		try
+		
+		List<Map<String,String>> res = new ArrayList<Map<String,String>>();
+		Statement s = connection.createStatement();
+		ResultSet rs = s.executeQuery(query);
+		
+		while(rs.next())
 		{
-			List<Map<String,String>> res = new ArrayList<Map<String,String>>();
-			Statement s = connection.createStatement();
-			ResultSet rs = s.executeQuery(query);
 			
-			while(rs.next())
-			{
-				
-				Map <String,String> row = new LinkedHashMap <String,String>();
-				for(int i=0;i <rs.getMetaData().getColumnCount();i++)
-				row.put
-				(
-					rs.getMetaData().getColumnLabel(i+1).toLowerCase(),
-					rs.getString(i+1)
-				);
-				res.add(row);
-			}
-			s.close();
-			return res;
+			Map <String,String> row = new LinkedHashMap <String,String>();
+			for(int i=0;i <rs.getMetaData().getColumnCount();i++)
+			row.put
+			(
+				rs.getMetaData().getColumnLabel(i+1).toLowerCase(),
+				rs.getString(i+1)
+			);
+			res.add(row);
 		}
-		catch(Exception e)
-		{
-			System.out.println("Query sbagliata, leggi errore qui sotto, CARATTERE PER CARATTERE");
-			System.out.println("Query: "+query);
-			System.out.println("Errore: "+e.getMessage());
-			return null;
-		}
+		s.close();
+		return res;
 	}
 	
 	/**
 	 * Esegue sul database la DML passata come parametro <br/>
 	 * Una DML è un'operazione di scrittura/modifica/cancellazione di una o più righe
 	 * @param dml
+	 * @throws SQLException 
 	 */
-	public void executeDML(String dml)
+	public void executeDML(String dml) throws SQLException
 	{
-		try
+		if(dml.toLowerCase().contains("create") || dml.toLowerCase().contains("drop") || dml.toLowerCase().contains("alter"))
 		{
-			if(dml.toLowerCase().contains("create") || dml.toLowerCase().contains("drop") || dml.toLowerCase().contains("alter"))
-			{
-				System.out.println("La query che stai inserendo non è una DML, controlla bene");
-				return;
-			}	
-			Statement s = connection.createStatement();
-			s.execute(dml);
-			s.close();
-		}
-		catch(Exception e)
-		{
-			System.out.println("DML sbagliata, leggi errore qui sotto, CARATTERE PER CARATTERE");
-			System.out.println("DML: "+dml);
-			System.out.println("Errore: "+e.getMessage());
-		}
+			System.out.println("La query che stai inserendo non è una DML, controlla bene");
+			return;
+		}	
+		Statement s = connection.createStatement();
+		s.execute(dml);
+		s.close();
+		
 	}
 	
 	/**
 	 * FOR THE FUTURE, IGNORARE
 	 * @param tableName
 	 * @param map
+	 * @throws SQLException 
 	 */
-	public void executeInsertByMap(String tableName, Map<String,String> map)
+	public void executeInsertByMap(String tableName, Map<String,String> map) throws SQLException
 	{
 		String sql="";
-		try
+		Statement s = connection.createStatement();
+			
+		String valuesName = "(";
+		String values = "(";
+		
+		for(String key : map.keySet())
 		{
-			Statement s = connection.createStatement();
-			
-			String valuesName = "(";
-			String values = "(";
-			
-			for(String key : map.keySet())
-			{
-				valuesName += key+",";
-				values     += "'"+map.get(key)+"',";
-			}
-			
-			valuesName = valuesName.substring(0, valuesName.length()-1)+")";
-			values = values.substring(0, values.length()-1)+")";
-			
-			sql = "INSERT INTO "+tableName+" "+valuesName+" VALUES "+values;
-			
-			s.execute(sql);
-			s.close();
+			valuesName += key+",";
+			values     += "'"+map.get(key)+"',";
 		}
-		catch(Exception e)
-		{
-			System.out.println("DML sbagliata, leggi errore qui sotto, CARATTERE PER CARATTERE");
-			System.out.println("DML: "+sql);
-			System.out.println("Errore: "+e.getMessage());
-		}
+		
+		valuesName = valuesName.substring(0, valuesName.length()-1)+")";
+		values = values.substring(0, values.length()-1)+")";
+		
+		sql = "INSERT INTO "+tableName+" "+valuesName+" VALUES "+values;
+		
+		s.execute(sql);
+		s.close();
+		
 	}
 	
 	/**
@@ -233,21 +197,13 @@ public class SQLConnection
 	 * Una DDL è un'operazione di creazione/modifica/cancellazione di metadata, come interi db, tabelle, colonne, ecc...
 	 * 
 	 * @param ddl
+	 * @throws SQLException 
 	 */
-	public void executeDDL(String ddl)
+	public void executeDDL(String ddl) throws SQLException
 	{
-		try
-		{
-			Statement s = connection.createStatement();
-			s.execute(ddl);
-			s.close();
-		}
-		catch(Exception e)
-		{
-			System.out.println("DDL sbagliata, leggi errore qui sotto, CARATTERE PER CARATTERE");
-			System.out.println("DDL: "+ddl);
-			System.out.println("Errore: "+e.getMessage());
-		}
+		Statement s = connection.createStatement();
+		s.execute(ddl);
+		s.close();
 	}
 	
 	

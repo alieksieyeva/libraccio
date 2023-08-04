@@ -88,8 +88,14 @@ public class Autore
 	{
 		this.dob = dob;
 	}
+	
+	public void setDob(String dob) 
+	{
+		this.dob = LocalDate.parse(dob);
+	}
 
-	public String toString() {
+	public String toString() 
+	{
 		return "{id:'" + id + "', nome:'" + nome + "', cognome:'" + cognome + "', sesso:'" + sesso + "', nazionalita:'"
 				+ nazionalita + "', dob:'" + dob + "'}";
 	}

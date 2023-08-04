@@ -153,6 +153,9 @@ public class PublisherRepository
 	
 	public List<Publisher> findAll()
 	{
+		
+		
+		
 		return findWhere("1 = 1");
 	}
 	

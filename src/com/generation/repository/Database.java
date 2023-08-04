@@ -1,5 +1,6 @@
 package com.generation.repository;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import com.generation.entity.Autore;
@@ -14,7 +15,7 @@ public class Database
 	private LibroRepository repoLibri;
 	private PublisherRepository repoPub;
 	
-	public Database (String filename, String autoreTabella, String libroTabella, String publisherTabella)
+	public Database (String filename, String autoreTabella, String libroTabella, String publisherTabella) throws SQLException
 	{
 		SQLConnection connection = new SQLConnection(filename);
 		repoAut = new AutoreRepository(connection, autoreTabella);

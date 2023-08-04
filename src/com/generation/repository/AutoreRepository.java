@@ -15,8 +15,8 @@ public class AutoreRepository
 	private static HashMap<String,String> commands = new HashMap<String,String>();
 	static
 	{
-		String insert = "INSERT INTO [tableName] (id, nome, cognome, sesso, dob, nazionalità)" +
-						"VALUES ([id], [nome], [cognome], [sesso], [dob], [nazionalita]";
+		String insert = "INSERT INTO [tableName] (id, nome, cognome, sesso, dob, nazionalita)" +
+						"VALUES ([id], [nome], [cognome], [sesso], [dob], [nazionalita])";
 		commands.put("insert", insert);
 		
 		String update = "UPDATE [tableName] set nome=[nome], cognome=[cognome], sesso=[sesso]," + 
